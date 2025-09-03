@@ -394,6 +394,11 @@ ul {
   line-height: 1;
 }
 
+.buy-now-btn:hover {
+  color: #ffffff;
+  background-color: #121212;
+}
+
 @keyframes spin {
   0% {
     transform: rotate(0deg);
@@ -401,6 +406,12 @@ ul {
 
   100% {
     transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 575px) {
+  .bundle-add-btn {
+    padding: 13px 20px;
   }
 }
 
@@ -1134,6 +1145,7 @@ START: Skincare Essentials CSS
   .skincare-essentials-bundle-bottom {
     flex-direction: column;
     height: 165px;
+    padding: 17px 20px;
   }
 
   .skincare-essentials-bundle-main-wrapper .skincare-essentials-bundle-table-main {
@@ -1144,6 +1156,18 @@ START: Skincare Essentials CSS
 @media (max-width: 575px) {
   .skincare-essentials-preview-item-wrap {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .skincare-essentials-bundle-infos .bundle-add-button {
+    margin-left: 10px;
+  }
+
+  .skincare-essentials-bundle-infos .bundle-add-price {
+    padding-right: 10px;
+  }
+
+  .total-preview-price .total-price {
+    font-size: 20px;
   }
 }
 
