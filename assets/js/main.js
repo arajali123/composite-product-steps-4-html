@@ -1,226 +1,213 @@
 
 // Tabs JS
 document.addEventListener("DOMContentLoaded", function () {
-  const tabLinks = document.querySelectorAll(".tabs-skincare-essentials-main-wrapper .tab-button");
-  const tabBodies = document.querySelectorAll(".tabs-skincare-essentials-main-wrapper .tabs-skincare-essentials-main-wrap");
-  let timerOpacity;
 
-  tabLinks.forEach((tabLink) => {
-    tabLink.addEventListener("click", function (e) {
-      e.preventDefault();
-      e.stopPropagation();
+  document.querySelectorAll(".skincare-essentials-bundle-main-wrap").forEach(tabWrap => {
+    const cartButtons = tabWrap.querySelectorAll(".cart-btn");
+    const totalItems = tabWrap.querySelector(".select-number");
 
-      // Timer
-      clearTimeout(timerOpacity);
+    if (!totalItems) return;
 
-      // Remove Active
-      tabLinks.forEach((link) => link.classList.remove("active"));
-      tabBodies.forEach((body) => {
-        body.classList.remove("active");
-        body.classList.remove("active-item");
-      });
+    const bundleItemsContainer = tabWrap.querySelector(".skincare-essentials-bundle-item");
+    const bundleItems = bundleItemsContainer ? bundleItemsContainer.querySelectorAll(".bundle-item") : [];
+    bundleItems.forEach(item => (item.style.display = "none"));
 
-      // Active Tabs
-      this.classList.add("active");
+    const fixedSlots = Array.from(bundleItems);
 
-      const targetId = this.getAttribute("href");
-      const targetBody = document.querySelector(targetId);
-
-      if (targetBody) {
-        targetBody.classList.add("active");
-
-        timerOpacity = setTimeout(() => {
-          targetBody.classList.add("active-item");
-        }, 50);
-      }
-    });
-  });
-});
-
-
-// Nice Select Js
-document.querySelectorAll(".tabs-skincare-essentials-select").forEach(select => {
-  const selected = select.querySelector(".select-selected span");
-  const itemContainers = select.querySelectorAll(".tabs-skincare-essentials-select-item");
-
-  // toggle dropdown
-  select.querySelector(".select-selected").addEventListener("click", (e) => {
-    e.stopPropagation();
-
-    document.querySelectorAll(".tabs-skincare-essentials-select").forEach(s => {
-      if (s !== select) s.classList.remove("active");
-    });
-    select.classList.toggle("active");
-  });
-
-  // select item
-  itemContainers.forEach(container => {
-    container.querySelectorAll("div").forEach(option => {
-      option.addEventListener("click", () => {
-        selected.textContent = option.textContent;
-        select.classList.remove("active");
-      });
-    });
-  });
-});
-
-document.addEventListener("click", () => {
-  document.querySelectorAll(".tabs-skincare-essentials-select").forEach(select => {
-    select.classList.remove("active");
-  });
-});
-
-
-// Counter Cart Js
-document.addEventListener("DOMContentLoaded", function () {
-  const wrappers = document.querySelectorAll(".tabs-skincare-essentials-main-wrap");
-
-  wrappers.forEach((wrapper) => {
-    const counters = wrapper.querySelectorAll(".skincare-essentials-counter");
-    const addItems = wrapper.querySelectorAll(".skincare-essentials-add-item .add-items");
-    const selectNumber = wrapper.querySelector(".select-number");
-
-    counters.forEach((counterBlock, index) => {
-      const addToCartBtn = counterBlock.querySelector(".primary-cart-btn");
-      const counter = counterBlock.querySelector(".counter");
+    tabWrap.querySelectorAll(".bundle-table-counter").forEach(counter => {
       const countSpan = counter.querySelector(".count");
-      const plusBtn = counterBlock.querySelector(".plus");
-      const minusBtn = counterBlock.querySelector(".minus");
+      countSpan.textContent = 0;
+      counter.style.display = "flex";
+    });
 
-      let count = 0;
+    function updateTotal(val) {
+      let total = parseInt(totalItems.textContent) || 0;
+      totalItems.textContent = Math.max(0, total + val);
+    }
 
-      function updateAll() {
+    function updateButtonText(button, count) {
+      if (!button) return;
+      button.textContent = count === 0 ? "Remove" : "Add Item";
+    }
+
+    // Button Loading
+    function showLoading(button, callback) {
+      if (!button) return;
+
+      if (button.classList.contains("loading")) return;
+
+      button.classList.add("loading");
+
+      setTimeout(() => {
+        button.classList.remove("loading");
+        if (callback) callback();
+      }, 700);
+    }
+
+    function incrementCounter(countSpan, slotIndex, button) {
+      let count = parseInt(countSpan.textContent) || 0;
+      count++;
+      countSpan.textContent = count;
+
+      updateTotal(1);
+
+      if (slotIndex < fixedSlots.length) {
+        fixedSlots[slotIndex].style.display = "flex";
+      }
+
+      updateButtonText(button, count);
+    }
+
+    function decrementCounter(countSpan, slotIndex, button) {
+      let count = parseInt(countSpan.textContent) || 0;
+      if (count > 0) {
+        count--;
         countSpan.textContent = count;
 
-        if (addItems[index]) {
-          addItems[index].style.display = count > 0 ? "flex" : "none";
+        updateTotal(-1);
+
+        if (slotIndex < fixedSlots.length && count === 0) {
+          fixedSlots[slotIndex].style.display = "none";
         }
 
-        updateSelectNumber();
+        updateButtonText(button, count);
       }
+    }
 
-      function updateSelectNumber() {
-        let total = 0;
-        wrapper.querySelectorAll(".skincare-essentials-counter .count").forEach(c => {
-          total += parseInt(c.textContent) || 0;
+    // Cart button
+    cartButtons.forEach((button, index) => {
+      button.addEventListener("click", () => {
+        const row = button.closest("tr");
+        if (!row) return;
+        const countSpan = row.querySelector(".bundle-table-counter .count");
+        if (!countSpan) return;
+
+        showLoading(button, () => {
+          incrementCounter(countSpan, index, button);
         });
-        if (selectNumber) selectNumber.textContent = total;
-      }
-
-      // Loading
-      addToCartBtn.addEventListener("click", function () {
-        addToCartBtn.classList.add("loading");
-        addToCartBtn.disabled = true;
-
-        setTimeout(function () {
-          count++;
-          counter.style.display = "flex";
-          addToCartBtn.style.display = "none";
-          updateAll();
-
-          addToCartBtn.classList.remove("loading");
-          addToCartBtn.disabled = false;
-        }, 600);
       });
+    });
 
-      // Plus
+    // Plus / Minus buttons
+    tabWrap.querySelectorAll(".bundle-table-counter").forEach((counter, index) => {
+      const plusBtn = counter.querySelector(".plus");
+      const minusBtn = counter.querySelector(".minus");
+      const countSpan = counter.querySelector(".count");
+      const button = cartButtons[index];
+
       plusBtn.addEventListener("click", () => {
-        plusBtn.classList.add("loading");
-        plusBtn.disabled = true;
-
-        setTimeout(function () {
-          count++;
-          updateAll();
-          plusBtn.classList.remove("loading");
-          plusBtn.disabled = false;
-        }, 1000);
+        showLoading(plusBtn, () => incrementCounter(countSpan, index, button));
       });
 
-      // Minus
       minusBtn.addEventListener("click", () => {
-        minusBtn.classList.add("loading");
-        minusBtn.disabled = true;
-
-        setTimeout(function () {
-          if (count > 1) {
-            count--;
-          } else {
-            count = 0;
-            counter.style.display = "none";
-            addToCartBtn.style.display = "block";
-          }
-          updateAll();
-          minusBtn.classList.remove("loading");
-          minusBtn.disabled = false;
-        }, 500);
+        showLoading(minusBtn, () => decrementCounter(countSpan, index, button));
       });
+    });
 
-      // Close-icon
-      if (addItems[index]) {
-        const closeBtn = addItems[index].querySelector(".close-icon");
-        if (closeBtn) {
-          closeBtn.addEventListener("click", () => {
-            closeBtn.classList.add("loading");
-            setTimeout(function () {
-              count = 0;
-              counter.style.display = "none";
-              addToCartBtn.style.display = "block";
-              updateAll();
-              closeBtn.classList.remove("loading");
-            }, 500);
-          });
+    // Close icon
+    tabWrap.addEventListener("click", function (e) {
+      if (e.target.closest(".close-icon")) {
+        const item = e.target.closest(".bundle-item");
+        const slotIndex = fixedSlots.indexOf(item);
+
+        if (slotIndex !== -1 && item.style.display !== "none") {
+          item.style.display = "none";
+
+          const counter = tabWrap.querySelectorAll(".bundle-table-counter")[slotIndex];
+          if (counter) {
+            const countSpan = counter.querySelector(".count");
+            let currentCount = parseInt(countSpan.textContent) || 0;
+
+            if (currentCount > 0) {
+              countSpan.textContent = currentCount - 1;
+              updateTotal(-1);
+
+              const button = cartButtons[slotIndex];
+              updateButtonText(button, currentCount - 1);
+            }
+          }
         }
       }
-
-      updateAll();
     });
   });
 });
-
 
 // Back Next Button Js
 document.addEventListener("DOMContentLoaded", function () {
   const tabs = document.querySelectorAll('[id^="tab-"]');
+  const tabButtons = document.querySelectorAll(".tab-button");
   const nextButtons = document.querySelectorAll(".next-btn");
   const backButtons = document.querySelectorAll(".back-btn");
-  const tabButtons = document.querySelectorAll(".tab-button");
+  const previewBtn = document.querySelector(".prview-btn");
+  const previewWrap = document.querySelector(".skincare-essentials-bundle-preview-wrapper");
+  const mainWrapper = document.querySelector(".skincare-essentials-bundle-main-wrapper");
 
-  let currentIndex = 0;
+  let currentStep = 0;
 
   function showTab(index) {
-    tabs.forEach(tab => tab.style.display = "none");
-    tabButtons.forEach(btn => btn.classList.remove("active"));
-    tabs[index].style.display = "block";
-    if (tabButtons[index]) {
-      tabButtons[index].classList.add("active");
-    }
-    currentIndex = index;
+    tabs.forEach((tab, i) => tab.style.display = i === index ? "block" : "none");
+    tabButtons.forEach((btn, i) => btn.classList.toggle("active", i === index));
+    currentStep = index;
+
+    if (previewWrap) previewWrap.style.display = "none";
   }
 
-  // next-btn
-  nextButtons.forEach(btn => {
-    btn.addEventListener("click", function () {
-      const nextIndex = (currentIndex + 1) % tabs.length;
-      showTab(nextIndex);
-    });
-  });
+  // Next / Back buttons
+  nextButtons.forEach(btn => btn.addEventListener("click", () => {
+    if (currentStep < tabs.length - 1) showTab(currentStep + 1);
+  }));
 
-  // back-btn
-  backButtons.forEach(btn => {
-    btn.addEventListener("click", function () {
-      const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
-      showTab(prevIndex);
-    });
-  });
+  backButtons.forEach(btn => btn.addEventListener("click", () => {
+    if (currentStep > 0) showTab(currentStep - 1);
+  }));
 
-  tabButtons.forEach((btn, index) => {
-    btn.addEventListener("click", function () {
-      showTab(index);
-    });
-  });
+  tabButtons.forEach((btn, index) => btn.addEventListener("click", e => {
+    e.preventDefault();
+    showTab(index);
+  }));
 
   showTab(0);
+
+  if (previewBtn && mainWrapper) {
+    previewBtn.addEventListener("click", e => {
+      e.preventDefault();
+
+      mainWrapper.style.display = "none";
+
+      tabButtons.forEach(btn => btn.style.display = "none");
+      nextButtons.forEach(btn => btn.style.display = "none");
+      backButtons.forEach(btn => btn.style.display = "none");
+
+      if (previewWrap) previewWrap.style.display = "block";
+    });
+  }
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
